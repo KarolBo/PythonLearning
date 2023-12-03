@@ -1,0 +1,4 @@
+Timestamp,Device,Sensor,Value
+2022-01-01 00:45:00,Device1,CO2,523.0
+2022-01-01 00:50:00,Device2,CO2,423.0
+2022-01-01 00:55:00,Device3,CO2,623.0

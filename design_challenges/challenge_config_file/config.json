@@ -1,0 +1,5 @@
+{
+    "api_key": "132cb366d65744598a9619a04755ee0e",
+    "url": "http://api.openweathermap.org/data/2.5/weather?q={}&appid={}",
+    "city": "Adliswil"
+}

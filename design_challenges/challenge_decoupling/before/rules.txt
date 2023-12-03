@@ -1,0 +1,14 @@
+1. Avoid deep inheritance relationships
+
+2. Separate creating resources from using them
+ - dependency injection
+
+3. Introduce abstractions 
+ - protocols
+ - dependency inversion
+
+ 4. Avoid inappropriate intimacy
+  - pass only as much as you need
+
+5. Introduce an intermediate datastructure
+

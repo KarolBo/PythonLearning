@@ -1,0 +1,27 @@
+import itertools
+
+
+for i in itertools.count(10, 5):
+    print(i)
+    if i >= 50:
+        break
+
+for i in itertools.repeat(10, 5):
+    print(i)
+
+numbers = [1, 3, 6, 4, 2, 6, 8, 7, 6]
+for i in itertools.accumulate(numbers):
+    print(i)
+
+letters = ['A', 'B', 'C']
+for i in itertools.permutations(letters):
+    print(i)
+
+chain = itertools.chain(letters, ['d', 'e', 'f'])
+print(list(chain))
+
+positive = itertools.filterfalse(lambda x: x <= 0, [-3, -2, -1, 0, 1, 2, 3, 10])
+print(list(positive))
+
+multiplied = itertools.starmap(lambda x, y: x * y, [(1, 2), (3, 4), (5, 6)])
+print(list(multiplied))

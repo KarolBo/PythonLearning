@@ -1,0 +1,7 @@
+{
+    "eng": {
+        "temperature": "The current temperature in {city} is {temperature:.1f} °C.",
+        "wind": "The current wind speed in {city} is {wind_speed} m/s from direction {wind_direction} degrees.",
+        "humidity": "The current humidity in {city} is {humidity}%."
+    }
+}
