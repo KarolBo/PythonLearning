@@ -6,23 +6,29 @@ RetType = TypeVar("RetType")
 OriginalFunc = Callable[Param, RetType]
 DecoratedFunc = Callable[Concatenate[str, Param], RetType]
 
-def measure_time() -> Callable[[OriginalFunc], DecoratedFunc]:
-    def decorator(func: OriginalFunc) -> DecoratedFunc:
-        def wrapper(*args, **kwargs) -> RetType:
+# def measure_time() -> Callable[[OriginalFunc], DecoratedFunc]:
+
+def measure_time(unit: str) -> DecoratedFunc:
+    def decorator(func: OriginalFunc):
+        def wraper(*args, **kwargs) -> RetType:
             start: float = time.time()
             result: RetType = func(*args, **kwargs) 
             stop: float = time.time()
-            print(f'{__name__} executed in {stop - start} s')
+            if unit == 'ms':
+                start *= 1000
+                stop *= 1000
+            print(f'{__name__} executed in {stop - start} {unit}')
             return result
 
-        return wrapper
-
+        return wraper
     return decorator
+
+# return measure_time
 
 
 if __name__ == '__main__':
-    @measure_time
-    def test_time():
-        time.sleep(5)
+    @measure_time('ms')
+    def test_time(delay):
+        time.sleep(delay)
 
-    test_time()
+    test_time(3)

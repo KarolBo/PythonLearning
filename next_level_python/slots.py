@@ -14,10 +14,11 @@ class FooSlots:
     value: str
 
 class FooSlotsDirect:
-    __slots__ = ('value',)
+    __slots__ = ('value', '__dict__')
 
     def __init__(self, value):
         self.value = value
+        self.dupa = 123
 
 
 def get_set_delete(value_object: FooDict | FooSlots | FooSlotsDirect):

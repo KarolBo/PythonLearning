@@ -29,13 +29,13 @@ def handle_guest():
 @asynccontextmanager
 async def handle_guest_async():
     print('The guest is comming...')
-    await asyncio.sleep(3)
+    await asyncio.sleep(2)
     try:
         print('witam')
         yield 'gość w dom, Bóg w dom'
     finally:
         print('The guest is leaving...')
-        await asyncio.sleep(3)
+        await asyncio.sleep(2)
         print('żegnam')
 
 

@@ -16,4 +16,4 @@ print(echo.send(1.9))
 try:
     print(echo.send(-0.1))
 except StopIteration as err:
-    print(err)
+    print('error occured:', err)

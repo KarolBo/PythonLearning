@@ -3,6 +3,8 @@ from typing import Generator
 
 # Generator expression
 generator = (x**2 for x in range(20))
+print(type(generator))
+print(generator.__iter__) # Generator is an Iterator
 for pow in generator:
     print(pow)
 
