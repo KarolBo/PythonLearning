@@ -1,10 +1,17 @@
-import sqlite3
-
 from datetime import datetime
-import uvicorn
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 
+import uvicorn
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from models import Base, Event, Ticket
+
+DB_URL = "sqlite:///./events.db"
+engine = create_engine(DB_URL, echo=True)
+SessionLocal = sessionmaker(engine)
+Base.metadata.create_all(engine)
 
 app = FastAPI()
 
@@ -13,8 +20,8 @@ app = FastAPI()
 class EventCreate(BaseModel):
     title: str
     location: str
-    start_date: str
-    end_date: str
+    start_date: datetime
+    end_date: datetime
     available_tickets: int
 
 
@@ -26,134 +33,82 @@ class TicketCreate(BaseModel):
 
 
 # Initialize database connection
-def get_db() -> sqlite3.Connection:
-    connection = sqlite3.connect("events.db")
-    connection.row_factory = sqlite3.Row
-    return connection
-
-
-# Initialize database table
-def init_db():
-    connection = get_db()
-    with open("schema.sql") as f:
-        connection.executescript(f.read())
+def get_db():
+    db = SessionLocal()
+    yield db
+    db.close()
 
 
 # Create event
-@app.post("/events")
-async def create_event(event: EventCreate):
-    connection = get_db()
-    cursor = connection.cursor()
-
-    cursor.execute(
-        """
-        INSERT INTO events (title, location, start_date, end_date, available_tickets)
-        VALUES (?, ?, ?, ?, ?)
-        """,
-        (
-            event.title,
-            event.location,
-            datetime.strptime(event.start_date, "%Y-%m-%d %H:%M:%S"),
-            datetime.strptime(event.end_date, "%Y-%m-%d %H:%M:%S"),
-            event.available_tickets,
-        ),
-    )
-    connection.commit()
-    return {"event_id": cursor.lastrowid}
+@app.post("/events", response_model=None)
+async def create_event(event: EventCreate, db: Session=Depends(get_db)) -> Event:
+    new_event = Event(**event.model_dump())
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+    return new_event
 
 
-@app.delete("/events/{event_id}")
-def delete_event(event_id: int):
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM events WHERE id=?", (event_id,))
-    event = cursor.fetchone()
-    if event is None:
+@app.delete("/events/{event_id}", response_model=None)
+def delete_event(event_id: int, db: Session=Depends(get_db)) -> Event:
+    event_do_delete = db.query(Event).filter(Event.id == event_id).first()
+    if not event_do_delete:
         raise HTTPException(status_code=404, detail="Event not found")
-    cursor.execute("DELETE FROM events WHERE id=?", (event_id,))
-    connection.commit()
-    connection.close()
-    return dict(event)
+    db.delete(event_do_delete)
+    db.commit()
+    return event_do_delete
 
 
 # Get event by id
-@app.get("/events/{event_id}")
-async def get_event(event_id: int):
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM events WHERE id = ?", (event_id,))
-    event = cursor.fetchone()
-    if event is None:
-        raise HTTPException(
-            status_code=404, detail=f"Event with id {event_id} not found."
-        )
-    return dict(event)
-
+@app.get("/events/{event_id}", response_model=None)
+async def get_event(event_id: int, db: Session=Depends(get_db)) -> Event:
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
 
 # Get all events
-@app.get("/events")
-async def get_all_events():
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM events")
-    events = cursor.fetchall()
-    return [dict(event) for event in events]
-
+@app.get("/events", response_model=None)
+async def get_all_events(db: Session=Depends(get_db)) -> list[Event]:
+    event_list = db.query(Event).all()
+    return event_list
 
 # Book ticket
-@app.post("/tickets")
-async def book_ticket(ticket: TicketCreate):
-    connection = get_db()
-    cursor = connection.cursor()
-
+@app.post("/tickets", response_model=None)
+async def book_ticket(ticket: TicketCreate, db: Session=Depends(get_db)) -> Ticket:
     # Get the event
-    cursor.execute("SELECT * FROM events WHERE id = ?", (ticket.event_id,))
-    event = cursor.fetchone()
+    event = db.query(Event).filter(Event.id == ticket.event_id).first()
     if event is None:
         raise HTTPException(
             status_code=404, detail=f"Event with id {ticket.event_id} not found"
         )
 
     # Check ticket availability
-    if event["available_tickets"] < 1:
+    if event.available_tickets < 1:
         raise HTTPException(status_code=400, detail="No available tickets.")
 
     # Create the ticket
-    cursor.execute(
-        """
-        INSERT INTO tickets (event_id, customer_name, customer_email)
-        VALUES (?, ?, ?)
-        """,
-        (ticket.event_id, ticket.customer_name, ticket.customer_email),
-    )
+    new_ticket = Ticket(**ticket.model_dump())
+    db.add(new_ticket)
+    db.commit()
+    db.refresh(new_ticket)
 
     # Update the event ticket availability
-    cursor.execute(
-        """
-        UPDATE events SET available_tickets = available_tickets - 1
-        WHERE id = ?
-        """,
-        (ticket.event_id,),
-    )
+    event.available_tickets -= 1
+    db.commit()
 
-    connection.commit()
-    return {"ticket_id": cursor.lastrowid}
+    return new_ticket
 
 
 # Get ticket by id
-@app.get("/tickets/{ticket_id}")
-async def get_ticket(ticket_id: int):
-    connection = get_db()
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,))
-    ticket = cursor.fetchone()
-    if ticket is None:
+@app.get("/tickets/{ticket_id}", response_model=None)
+async def get_ticket(ticket_id: int, db: Session=Depends(get_db)) -> Ticket:
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
-    return dict(ticket)
-
+    return ticket
 
 def main():
-    init_db()
     uvicorn.run(app, host="0.0.0.0", port=8001)
 
 

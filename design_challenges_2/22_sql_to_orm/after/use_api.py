@@ -1,6 +1,6 @@
 import requests
 
-API_URL = "http://localhost:8000"
+API_URL = "http://localhost:8001"
 
 
 def create_new_event():
