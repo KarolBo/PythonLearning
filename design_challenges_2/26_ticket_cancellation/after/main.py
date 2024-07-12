@@ -72,13 +72,32 @@ async def get_ticket(ticket_id: int, database: Session = Depends(get_db)):
     except operations.NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
 
-app.delete("/ticket")
-async def delete_ticket(ticket_id: int, database: Session = Depends(get_db_)):
+
+@app.delete("/tickets/{ticket_id}")
+async def delete_ticket(ticket_id: int, database: Session = Depends(get_db)):
     try:
-        operations.delete_ticket(ticket_id, database)
+        return operations.delete_ticket(ticket_id, database)
     except operations.NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
+    except operations.TooLateMan as exc2:
+        raise HTTPException(status_code=400) from exc2
 
+@app.put("/tickets/{ticket_id}")
+async def update_ticket(ticket_id: int, new_name: str, database: Session = Depends(get_db)):
+    try:
+        return operations.update_ticket_name(ticket_id, new_name, database)
+    except operations.NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    except operations.TooLateMan as exc2:
+        raise HTTPException(status_code=400) from exc2
+
+
+@app.delete("/event/{event_id}")
+async def delete_event(event_id: int, database: Session = Depends(get_db)):
+    try:
+        return operations.delete_event(event_id, database)
+    except operations.NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
 
 
 def main():
