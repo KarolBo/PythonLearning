@@ -31,6 +31,9 @@ def view_full(medium: Medium) -> None:
     print(medium.get_subheading())
     print(medium.get_text())
 
+def view_teaser(medium: Medium) -> None:
+    print(medium.get_text()[:10])
+
 
 @dataclass
 class Movie(Medium):
@@ -86,6 +89,7 @@ def main() -> None:
         view_list(item)
         view_preview(item)
         view_full(item)
+        view_teaser(item)
 
 
 if __name__ == "__main__":
